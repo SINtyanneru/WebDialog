@@ -63,6 +63,15 @@ API
 .. code-block:: shell
 
    bun install
+   bun run dev
+
+``bun run dev`` で開発サーバーが起動し、 http://localhost:3000 にデモページが表示されます。
+デモページは ``src/index.ts`` を直接読み込むので、ライブラリを保存するとその場で反映されます（HMR）。
+
+リリース用ビルド:
+
+.. code-block:: shell
+
    bun run build
 
 ビルドすると ``dist/`` に ``index.js`` と ``index.d.ts`` が生成されます。
