@@ -1,152 +1,264 @@
-//WebDialog
-//ブラウザで使えるダイアログライブラリ。依存なし、DOMだけで動く。
+let ok_text = "おｋ";
+let cancel_text = "やめた";
+let yes_text = "はい";
+let no_text = "いいえ";
+let default_css_enable = true;
 
-export interface DialogButton {
-	label: string;
-	value: string;
-}
+type DialogBase = {
+	bg: HTMLDivElement,
+	parent: HTMLDivElement,
+	display: HTMLDivElement,
+	button_field: HTMLDivElement
+};
 
-export interface DialogOptions {
-	title?: string;
-	message: string;
-	buttons?: DialogButton[];
-	closeOnOverlayClick?: boolean;
-}
+/**
+ * ダイアログの土台を生成します。
+ */
+function show_base(): DialogBase {
+	let bg = document.createElement("DIV") as HTMLDivElement;
+	bg.className = "DIALOG_BG";
 
-const STYLE_TEXT = [
-	".webdialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:10000;}",
-	".webdialog-box{background:#ffffff;color:#222222;border-radius:8px;padding:20px 24px;max-width:90vw;width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.3);font-family:sans-serif;}",
-	".webdialog-title{font-size:17px;font-weight:bold;margin:0 0 8px 0;}",
-	".webdialog-message{font-size:14px;margin:0 0 16px 0;white-space:pre-wrap;word-break:break-word;}",
-	".webdialog-buttons{display:flex;justify-content:flex-end;gap:8px;}",
-	".webdialog-button{font-size:14px;padding:6px 16px;border:1px solid #bbbbbb;border-radius:6px;background:#f5f5f5;cursor:pointer;}",
-	".webdialog-button:hover{background:#e8e8e8;}"
-].join("\n");
+	let parent = document.createElement("DIV") as HTMLDivElement;
+	parent.className = "DIALOG_PARENT";
 
-let styleInjected = false;
+	let display = document.createElement("DIV") as HTMLDivElement;
+	display.className = "DIALOG_DISPLAY";
+	parent.append(display);
 
-function injectStyle(): void {
-	if (styleInjected) {
-		return;
+	let button_field = document.createElement("DIV") as HTMLDivElement;
+	button_field.className = "DIALOG_BUTTONFIELD";
+	parent.append(button_field);
+
+	if (default_css_enable) {
+		bg.style.position = "fixed";
+		bg.style.top = "0px";
+		bg.style.left = "0px";
+		bg.style.width = "100vw";
+		bg.style.height = "100vh";
+		bg.style.backgroundColor = "#000000AA";
+
+		parent.style.position = "fixed";
+		parent.style.top = "50%";
+		parent.style.left = "50%";
+		parent.style.transform = "translate(-50%, -50%)";
+		parent.style.backgroundColor = "#FFFFFFAA";
+		parent.style.padding = "10px";
+		parent.style.borderRadius = "5px";
+		parent.style.minWidth = "200px";
+		parent.style.minHeight = "100px";
+		parent.style.display = "flex";
+		parent.style.flexDirection = "column";
+
+		button_field.style.backgroundColor = "#FFFFFF";
+		button_field.style.borderRadius = "0px 0px 5px 5px";
+		button_field.style.height = "24px";
+
+		display.style.backgroundColor = "#FFFFFF";
+		display.style.borderRadius = "5px 5px 0px 0px";
+		display.style.flexGrow = "1";
 	}
-	styleInjected = true;
-	const style = document.createElement("style");
-	style.textContent = STYLE_TEXT;
-	document.head.appendChild(style);
-}
 
-//ダイアログを表示する。押されたボタンのvalueを返す。
-//Escキーやオーバーレイのクリックで閉じた場合はnullを返す。
-export function showDialog(options: DialogOptions): Promise<string | null> {
-	return new Promise(function (resolve) {
-		injectStyle();
+	document.body.append(bg);
+	document.body.append(parent);
 
-		const overlay = document.createElement("div");
-		overlay.className = "webdialog-overlay";
-
-		const box = document.createElement("div");
-		box.className = "webdialog-box";
-		box.setAttribute("role", "dialog");
-		box.setAttribute("aria-modal", "true");
-		overlay.appendChild(box);
-
-		if (options.title !== undefined) {
-			const title = document.createElement("p");
-			title.className = "webdialog-title";
-			title.textContent = options.title;
-			box.appendChild(title);
-		}
-
-		const message = document.createElement("p");
-		message.className = "webdialog-message";
-		message.textContent = options.message;
-		box.appendChild(message);
-
-		let buttons: DialogButton[];
-		if (options.buttons !== undefined) {
-			buttons = options.buttons;
-		} else {
-			buttons = [{ label: "OK", value: "ok" }];
-		}
-
-		let closed = false;
-		function close(value: string | null): void {
-			if (closed) {
-				return;
-			}
-			closed = true;
-			document.removeEventListener("keydown", onKeydown);
-			overlay.remove();
-			resolve(value);
-		}
-		function onKeydown(event: KeyboardEvent): void {
-			if (event.key === "Escape") {
-				close(null);
-			}
-		}
-
-		const row = document.createElement("div");
-		row.className = "webdialog-buttons";
-		box.appendChild(row);
-
-		let firstButton: HTMLButtonElement | null = null;
-		for (let i = 0; i < buttons.length; i++) {
-			const def = buttons[i];
-			const button = document.createElement("button");
-			button.className = "webdialog-button";
-			button.textContent = def.label;
-			button.addEventListener("click", function () {
-				close(def.value);
-			});
-			row.appendChild(button);
-			if (firstButton === null) {
-				firstButton = button;
-			}
-		}
-
-		overlay.addEventListener("click", function (event) {
-			if (event.target === overlay) {
-				if (options.closeOnOverlayClick !== false) {
-					close(null);
-				}
-			}
-		});
-
-		document.body.appendChild(overlay);
-		document.addEventListener("keydown", onKeydown);
-		if (firstButton !== null) {
-			firstButton.focus();
-		}
-	});
-}
-
-//OKだけのダイアログ
-export function alertDialog(message: string, title?: string): Promise<void> {
-	const options: DialogOptions = {
-		message: message,
-		buttons: [{ label: "OK", value: "ok" }]
+	return {
+		bg: bg,
+		parent: parent,
+		display: display,
+		button_field: button_field
 	};
-	if (title !== undefined) {
-		options.title = title;
+}
+
+/**
+ * ダイアログのデフォルトCSSを殺します
+ */
+export function dialog_disable_default_css() {
+	default_css_enable = false;
+}
+
+/**
+ * OKの文字を変えます
+ */
+export function dialog_change_ok(text: string) {
+	ok_text = text;
+}
+
+/**
+ * YESの文字を変えます
+ */
+export function dialog_change_yes(text: string) {
+	yes_text = text;
+}
+
+/**
+ * NOの文字を変えます
+ */
+export function dialog_change_no(text: string) {
+	no_text = text;
+}
+
+/**
+ * CANCELの文字を変えます
+ */
+export function dialog_change_cancel(text: string) {
+	cancel_text = text;
+}
+
+
+/**
+ * ダイアログを出します
+ */
+export function show_dialog(text: string) {
+	let base = show_base();
+	base.parent.dataset["type"] = "DIALOG";
+	base.display.innerText = text;
+
+	let ok_button = document.createElement("BUTTON") as HTMLButtonElement;
+	ok_button.className = "DIALOG_BUTTON_OK";
+	ok_button.innerText = ok_text;
+	base.button_field.append(ok_button);
+
+	ok_button.onclick = function() {
+		base.bg.remove();
+		base.parent.remove();
 	}
-	return showDialog(options).then(function () {
-		return;
+}
+
+/**
+ * 入力ダイアログ
+ */
+export function show_input(text: string, placeholder: string): Promise<string|null> {
+	let base = show_base();
+	base.parent.dataset["type"] = "INPUT";
+
+	let text_el = document.createElement("DIV") as HTMLDivElement;
+	text_el.className = "DIALOG_TEXT";
+	text_el.innerText = text;
+	base.display.append(text);
+
+	let input = document.createElement("INPUT") as HTMLInputElement;
+	input.className = "DIALOG_INPUT";
+	input.placeholder = placeholder;
+	base.display.append(input);
+
+	let ok_button = document.createElement("BUTTON") as HTMLButtonElement;
+	ok_button.className = "DIALOG_BUTTON_OK";
+	ok_button.innerText = ok_text;
+	base.button_field.append(ok_button);
+
+	let cancel_button = document.createElement("BUTTON") as HTMLButtonElement;
+	cancel_button.className = "DIALOG_BUTTON_CANCEL";
+	cancel_button.innerText = cancel_text;
+	base.button_field.append(cancel_button);
+
+	input.focus();
+
+	function close() {
+		base.bg.remove();
+		base.parent.remove();
+	}
+
+	return new Promise((resolve, reject) => {
+		input.onkeydown = function(e) {
+			if (e.key == "Enter") {
+				ok_button.click();
+			}
+		}
+
+		ok_button.onclick = function() {
+			if (input.value == "") return;
+
+			close();
+
+			resolve(input.value);
+		}
+
+		cancel_button.onclick = function() {
+			close();
+			resolve(null);
+		}
 	});
 }
 
-//OK／キャンセルの確認ダイアログ。OKならtrue、キャンセルや閉じた場合はfalse
-export function confirmDialog(message: string, title?: string): Promise<boolean> {
-	const options: DialogOptions = {
-		message: message,
-		buttons: [
-			{ label: "キャンセル", value: "cancel" },
-			{ label: "OK", value: "ok" }
-		]
-	};
-	if (title !== undefined) {
-		options.title = title;
+/**
+ * Yes No
+ */
+export function show_yes_no(text: string): Promise<boolean> {
+	let base = show_base();
+	base.parent.dataset["type"] = "INPUT";
+	base.display.innerText = text;
+
+	let yes_button = document.createElement("BUTTON") as HTMLButtonElement;
+	yes_button.className = "DIALOG_BUTTON_OK";
+	yes_button.innerText = yes_text;
+	base.button_field.append(yes_button);
+
+	let no_button = document.createElement("BUTTON") as HTMLButtonElement;
+	no_button.className = "DIALOG_BUTTON_CANCEL";
+	no_button.innerText = no_text;
+	base.button_field.append(no_button);
+
+	function close() {
+		base.bg.remove();
+		base.parent.remove();
 	}
-	return showDialog(options).then(function (value) {
-		return value === "ok";
+
+	return new Promise((resolve, reject) => {
+		yes_button.onclick = function() {
+			close();
+			resolve(true);
+		}
+
+		no_button.onclick = function() {
+			close();
+			resolve(false);
+		}
 	});
 }
+
+/**
+ * Yes No Cancel
+ */
+export function show_yes_no_cancel(text: string): Promise<boolean|null> {
+	let base = show_base();
+	base.parent.dataset["type"] = "INPUT";
+	base.display.innerText = text;
+
+	let yes_button = document.createElement("BUTTON") as HTMLButtonElement;
+	yes_button.className = "DIALOG_BUTTON_OK";
+	yes_button.innerText = yes_text;
+	base.button_field.append(yes_button);
+
+	let no_button = document.createElement("BUTTON") as HTMLButtonElement;
+	no_button.className = "DIALOG_BUTTON_CANCEL";
+	no_button.innerText = no_text;
+	base.button_field.append(no_button);
+
+	let cancel_button = document.createElement("BUTTON") as HTMLButtonElement;
+	cancel_button.className = "DIALOG_BUTTON_CANCEL";
+	cancel_button.innerText = cancel_text;
+	base.button_field.append(cancel_button);
+
+	function close() {
+		base.bg.remove();
+		base.parent.remove();
+	}
+
+	return new Promise((resolve, reject) => {
+		yes_button.onclick = function() {
+			close();
+			resolve(true);
+		}
+
+		no_button.onclick = function() {
+			close();
+			resolve(false);
+		}
+
+		cancel_button.onclick = function() {
+			close();
+			resolve(null);
+		}
+	});
+}
+

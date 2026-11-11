@@ -1,24 +1,14 @@
 <!DOCTYPE html>
-<HTML lang="ja">
+<HTML>
 	<HEAD>
-		<META charset="UTF-8">
-		<META name="viewport" content="width=device-width, initial-scale=1">
-		<TITLE>WebDialog デモ</TITLE>
-		<STYLE>
-			BODY { font-family: sans-serif; margin: 40px; }
-			BUTTON { font-size: 14px; padding: 8px 16px; margin: 0 8px 8px 0; cursor: pointer; }
-			#result { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; white-space: pre-wrap; }
-		</STYLE>
+		<TITLE>WebDialog</TITLE>
 	</HEAD>
 	<BODY>
-		<H1>WebDialog デモ</H1>
-		<P>ボタンを押すとダイアログが出ます。結果は下に表示されます。</P>
-		<P>
-			<BUTTON id="btn-alert" type="button">alertDialog</BUTTON>
-			<BUTTON id="btn-confirm" type="button">confirmDialog</BUTTON>
-			<BUTTON id="btn-custom" type="button">showDialog（カスタム）</BUTTON>
-		</P>
-		<P id="result">（まだ何も押されていません）</P>
-		<SCRIPT type="module" src="./demo.ts"></SCRIPT>
+		<H1>WebDialog</H1>
+
+		<BUTTON ID="SHOW_DIALOG_BTN">ダイアログを出す</BUTTON>
+		<BUTTON ID="SHOW_INPUT_BTN">質問を出す</BUTTON>
+		<BUTTON ID="SHOW_YN_BTN">Yes/No</BUTTON>
 	</BODY>
+	<SCRIPT SRC="script.ts" TYPE="module"></SCRIPT>
 </HTML>
